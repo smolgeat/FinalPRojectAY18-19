@@ -1,2 +1,2 @@
-# FinalPRojectAY18-19
+# FinalProjectAY18-19
 code for a solar tracker
