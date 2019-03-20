@@ -1,9 +1,3 @@
-
-/* 
- Improvements controll speed via potentiometer
- control update frequency vs potentiometer
- use functions for movement
-*/
 // For l298LN driver connections
 int pan1 = 5;
 int pan2 = 6;
@@ -28,6 +22,29 @@ void setup() {
   pinMode(ena2,OUTPUT);
 
 }
+void motor_move (int tol,int diff,int term1, int term2, int spd, int x , int y) {
+  if ( -1*tol > diff || diff> tol) 
+    {  
+      if(x>y)//moves toward x
+        {
+        digitalWrite(term1,HIGH);
+        digitalWrite(term2,LOW);
+        analogWrite(spd,255);   
+        }
+       else // moves toward y
+        {
+        digitalWrite(term1,LOW);
+        digitalWrite(term2,HIGH);
+        analogWrite(spd,255);
+        }
+    }
+   else 
+    {
+    //stop
+    digitalWrite(term1,LOW);
+    digitalWrite(term2,LOW);
+    }
+}
 
 void loop() 
 {
@@ -37,11 +54,11 @@ void loop()
     int tr = analogRead(topr);
     int bl = analogRead(botl);
     int br = analogRead(botr);
-    int tol = analogRead(5)/4; //toleranc eallows for  relatively even sunlight across 4 quadrants
-     int cycletime = analogRead(6); //time arduino waits
+    int tol = analogRead(4)/4; //determines  how much of a difference in sunlight the arduino responds to
+    int cycletime = analogRead(5); //value adjusted using potentiometer
     //  int spd = anolagRead(7); motor speed setting
     
-    // get avg voltage readings
+    // calculate avg voltage readings for top , bottom, left, right
     int avgtop = (tl+tr)/2;
     int avgbot = (bl+br)/2;
     int avgl = (tl+bl)/2;
@@ -49,50 +66,8 @@ void loop()
 
     int dvert = avgtop - avgbot; // check the diffirence of up and down
     int dhorz = avgl - avgr;// check the diffirence og left and rigt
-    // change orientation if difference in averages are outside of tolerance for vertical plane
-  if ( -1*tol > dvert || dvert> tol) 
-    {  
-      if(avgtop>avgbot)//top has more average lightmove upwards
-    {
-       digitalWrite(tilt1,HIGH);
-       digitalWrite(tilt2,LOW);
-       analogWrite(ena2,255);   
-       }
-       else // bot has more move downwards
-       {
-        digitalWrite(tilt1,LOW);
-       digitalWrite(tilt2,HIGH);
-       analogWrite(ena2,255);
-        }
-    }
-    else 
-    {
-      //stop
-      digitalWrite(tilt1,LOW);
-      digitalWrite(tilt2,LOW);
-      }
-    if ( -1*tol > dhorz|| dhorz> tol) //check for difference in horizontal plane
-    {  
-      if(avgtop>avgbot)//left has more average lightmove left
-    {
-       digitalWrite(pan1,HIGH);
-       digitalWrite(pan2,LOW);
-       analogWrite(ena1,255);   
-       }
-       else // right has more move right
-       {
-        digitalWrite(pan1,LOW);
-       digitalWrite(pan2,HIGH);
-       analogWrite(ena1,255);
-        }
-    }
-       else 
-    {
-      //stop
-      digitalWrite(pan1,LOW);
-      digitalWrite(pan2,LOW);
-      }
-
-    
-    delay(cycletime) ; //waits for x seconds
+    // change orientation if difference in averages are outside of tolerance for vertical then horizontal plane
+    motor_move(tol,dvert,tilt1,tilt2,ena2,avgtop,avgbot);
+    motor_move(tol,dhorz,pan1,pan2,ena1,avgl,avgr);
+    delay(cycletime) ; //time allows for motors to move before running again
 }
